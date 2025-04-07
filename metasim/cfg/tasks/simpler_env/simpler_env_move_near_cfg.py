@@ -85,7 +85,6 @@ class SimplerEnvMoveNearCfg(BaseTaskCfg):
         # load json file
         with open(config_filepath) as f:
             all_config_dict = json.load(f)
-            print(len(all_config_dict), "++++++++++++++")
             assert subtask_id < len(all_config_dict), f"subtask_id {subtask_id} out of range"
             self.config_dict = all_config_dict[subtask_id]
         self.source_benchmark = BenchmarkType.SIMPLERENVMOVENEAR
