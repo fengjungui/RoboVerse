@@ -39,7 +39,39 @@ def __get_quick_ref():
     from .rlbench.close_box_cfg import CloseBoxCfg
     from .robosuite import SquareD0Cfg, SquareD1Cfg, SquareD2Cfg, StackD0Cfg
     from .simpler_env.simpler_env_grasp_opened_coke_can_cfg import SimplerEnvGraspOpenedCokeCanCfg
-    from .simpler_env.simpler_env_move_near import SimplerEnvMoveNearCfg
+    from .simpler_env.simpler_env_move_near_cfg import (
+        SimplerEnvMoveNear0Cfg,
+        SimplerEnvMoveNear1Cfg,
+        SimplerEnvMoveNear2Cfg,
+        SimplerEnvMoveNear3Cfg,
+        SimplerEnvMoveNear4Cfg,
+        SimplerEnvMoveNear5Cfg,
+        SimplerEnvMoveNear6Cfg,
+        SimplerEnvMoveNear7Cfg,
+        SimplerEnvMoveNear8Cfg,
+        SimplerEnvMoveNear9Cfg,
+        SimplerEnvMoveNear10Cfg,
+        SimplerEnvMoveNear11Cfg,
+        SimplerEnvMoveNear12Cfg,
+        SimplerEnvMoveNear13Cfg,
+        SimplerEnvMoveNear14Cfg,
+        SimplerEnvMoveNear15Cfg,
+        SimplerEnvMoveNear16Cfg,
+        SimplerEnvMoveNear17Cfg,
+        SimplerEnvMoveNear18Cfg,
+        SimplerEnvMoveNear19Cfg,
+        SimplerEnvMoveNear20Cfg,
+        SimplerEnvMoveNear21Cfg,
+        SimplerEnvMoveNear22Cfg,
+        SimplerEnvMoveNear23Cfg,
+        SimplerEnvMoveNear24Cfg,
+        SimplerEnvMoveNear25Cfg,
+        SimplerEnvMoveNear26Cfg,
+        SimplerEnvMoveNear27Cfg,
+        SimplerEnvMoveNear28Cfg,
+        SimplerEnvMoveNear29Cfg,
+        SimplerEnvMoveNearCfg,
+    )
 
     # from .skillblender import G1BaseTaskCfg, H1BaseTaskCfg
     from .uh1 import MabaoguoCfg
