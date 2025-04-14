@@ -86,7 +86,11 @@ class Sb3EnvWrapper(VecEnv):
     def reset(self, options=None):
         """Reset the environment."""
         _, _ = self.env.reset(states=self.init_states)
-        humanoid_observation = self.get_humanoid_observation(self.env.handler.get_states())
+        from metasim.utils.state import tensor_state_to_env_states
+
+        states = self.env.handler.get_states()
+        state_list = tensor_state_to_env_states(self.env.handler, states)
+        humanoid_observation = self.get_humanoid_observation(state_list)
         observations = humanoid_observation.cpu().numpy()
 
         # Reset episode tracking variables
@@ -147,9 +151,14 @@ class Sb3EnvWrapper(VecEnv):
         _, _, terminated_tensor, truncated_tensor, _ = self.env.step(action_dict)
 
         # Get formatted observations
+        # states = self.env.handler.get_states()
+
+        from metasim.utils.state import tensor_state_to_env_states
+
         states = self.env.handler.get_states()
-        humanoid_observation = self.get_humanoid_observation(states)
-        humanoid_reward = self.get_humanoid_reward(states)
+        state_list = tensor_state_to_env_states(self.env.handler, states)
+        humanoid_observation = self.get_humanoid_observation(state_list)
+        humanoid_reward = self.get_humanoid_reward(state_list)
 
         # Convert tensors to NumPy arrays
         observations = humanoid_observation.cpu().numpy()

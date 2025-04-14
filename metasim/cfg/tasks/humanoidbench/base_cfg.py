@@ -75,7 +75,7 @@ class HumanoidTaskCfg(BaseRLTaskCfg):
                     # Process basic robot properties
                     for key in ["pos", "rot", "vel", "ang_vel"]:
                         if key in robot_state and robot_state[key] is not None:
-                            flattened.append(np.array(robot_state[key]).flatten())
+                            flattened.append(np.array(robot_state[key].cpu()).flatten())
 
                     # Process DOF positions and velocities
                     for dof_type in ["dof_pos", "dof_vel"]:

@@ -370,10 +370,12 @@ class SlideChecker(BaseChecker):
 class WalkChecker(BaseChecker):
     def check(self, handler: BaseSimHandler) -> torch.BoolTensor:
         from metasim.utils.humanoid_robot_util import robot_position
+        from metasim.utils.state import tensor_state_to_env_states
 
         states = handler.get_states()
+        state_list = tensor_state_to_env_states(handler, states)
         terminated = []
-        for state in states:
+        for state in state_list:
             if robot_position(state, handler.robot.name)[2] < 0.2:
                 terminated.append(True)
             else:
