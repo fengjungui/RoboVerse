@@ -1,24 +1,37 @@
 # Real2Sim
 
-The general idea of Real2Sim is to reconstruct the static scene and generate scene-aligned digital asset for robotic manipulation.
-
 ## Prerequisite
-1. supersplat
-2. colmap / glomap
-3. gsplat
-4. stablenormal
-5. 2dgs
+1. [supersplat](https://github.com/playcanvas/supersplat)
+2. [colmap](https://colmap.github.io/) / [glomap](https://github.com/colmap/glomap)
+3. [gsplat](https://github.com/nerfstudio-project/gsplat)
+4. [StableNormal](https://github.com/Stable-X/StableNormal)
+5. [2DGS](https://github.com/hugoycj/2d-gaussian-splatting-great-again)
 
 ## Process
-1. Take video
+1. Take a video
 2. Run colmap
 3. Run gsplat
-4. Mesh extraction (StableNormal, 2dgs)
-5. Recenter and Reorientation
-6. Segmentation for 3DGS and mesh
-7. Assign ID for 3DGS
-8. Fix Kinemics & Dynamics parameters
-9. Construct URDF
-10. Alignment: coordinate & scale (between mesh, 3DGS and physics engines)
-11. Physics-awared rendering (fk, ik, mujoco) (for vla)
-12. load urdf for policy (for rl and imitation learning)
+4. Extract normal map (StableNormal)
+5. Extract mesh (2DGS)
+6. Recenter and reorientation
+7. Segment 3DGS and mesh
+8. Assign ID for 3DGS
+9. Fix kinemics & dynamics parameters
+10. Align coordinate and scale (between mesh, 3DGS, and physics engines)
+11. Construct URDF
+12. Physics-awared 3DGS rendering (with FK, IK, and collision detection)
+13. Load URDF for simulation
+
+```mermaid
+%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
+graph LR
+    start{Start} --1--> Video --2--> Cameras
+    Video & Cameras --3--> 3DGS
+    Video --4--> Normal
+    3DGS & Normal --5--> Mesh
+    Mesh -->|6,7,9,10| Mesh
+    3DGS -->|6,7,8,9,10| 3DGS
+    Mesh --11--> URDF
+    3DGS --12--> 3DGS_render{3DGS Rendering}
+    URDF --13--> Simulation{Physics Simulation}
+```
