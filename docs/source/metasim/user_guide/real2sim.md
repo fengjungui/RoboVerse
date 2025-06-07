@@ -23,8 +23,7 @@
 13. Load URDF for simulation
 
 ```{mermaid}
-%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
-graph LR
+flowchart-elk LR
     start{Start} --1--> Video --2--> Cameras
     Video & Cameras --3--> 3DGS
     Video --4--> Normal
