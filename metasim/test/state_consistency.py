@@ -130,7 +130,7 @@ init_states = [
 ]
 
 if args.sim == "isaacgym":
-    # In IsaacGym, we need to call gym.simulate before we can effectively get states from physics engine.
+    # In IsaacGym, we need to call gym.simulate before we can effectively get tensor states from physics engine.
     env.handler.simulate()
 env.handler.set_states(init_states)
 states = state_tensor_to_nested(env.handler, env.handler.get_states())
@@ -163,4 +163,4 @@ for i in range(args.num_envs):
             init_states[i]["robots"]["franka"]["dof_pos"][k],
         )
 
-log.info("Test passed !!!")
+log.info("Test passed !!!!!")
