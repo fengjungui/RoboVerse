@@ -110,13 +110,14 @@ fix the mdh hyperparameter
 ### 10. Align coordinate and scale (between mesh, 3DGS, and physics engines)
 Align the coordinate and scale (between mesh, 3DGS, and physics engines).
 
-fix the coordinate and scale(normally it si automatic)
+fix the coordinate and scale(normally it is automatic)
 
+run icp for the scale registration
 
 ### 11. Construct URDF
 Construct URDF from the 3DGS.
 
-
+run the ik from the mdh we cumstomizer, the fk to the new urdf that is aligned with the real world robot setting.
 
 ### 12. Physics-awared 3DGS rendering (with FK, IK, and collision detection)
 
