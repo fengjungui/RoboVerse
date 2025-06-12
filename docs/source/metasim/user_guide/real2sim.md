@@ -114,16 +114,24 @@ fix the coordinate and scale(normally it is automatic)
 
 run icp for the scale registration
 
-### 11. Construct URDF
-Construct URDF from the 3DGS.
+### 11. Construct URDF(MJCF)
+Construct URDF(MJCF) from the 3DGS.
 
 run the ik from the mdh we cumstomizer, the fk to the new urdf that is aligned with the real world robot setting.
 
-### 12. Physics-awared 3DGS rendering (with FK, IK, and collision detection)
+Setup the table, object mesh and the relative pose in regard of the robotic arm base(by compute the bbox and center of mass)
+
+generate the urdf and mjcf with the physics parameter infered from VLM.
+
+
+### 12. Load URDF(MJCF) for simulation
+Load URDF(MJCF) for simulation.
+
+
+### 13. Physics-awared 3DGS rendering (with FK, IK, and collision detection)
 
 fix the binding and perform 4d rendering 
 
 Physics-awared 3DGS rendering (with FK, IK, and collision detection).
 
-### 13. Load URDF for simulation
-Load URDF for simulation.
+
