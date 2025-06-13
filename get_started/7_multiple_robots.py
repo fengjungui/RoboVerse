@@ -89,10 +89,8 @@ def main():
             }
             for _ in range(scenario.num_envs)
         ]
-        # env.step(actions)
         obs, reward, success, time_out, extras = env.step(actions)
         obs_saver.add(obs)
-        # env.render()
         step += 1
 
     obs_saver.save()
