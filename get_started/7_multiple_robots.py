@@ -16,10 +16,10 @@ from rich.logging import RichHandler
 rootutils.setup_root(__file__, pythonpath=True)
 log.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
 
-from metasim.cfg.sensors import PinholeCameraCfg
 from get_started.utils import ObsSaver
 from metasim.cfg.robots import FrankaCfg, H1Cfg
 from metasim.cfg.scenario import ScenarioCfg
+from metasim.cfg.sensors import PinholeCameraCfg
 from metasim.constants import SimType
 from metasim.utils.setup_util import get_sim_env_class
 
@@ -50,7 +50,6 @@ def main():
     )
     scenario.cameras = [PinholeCameraCfg(width=1024, height=1024, pos=(1.5, -1.5, 1.5), look_at=(0.0, 0.0, 0.0))]
 
-
     log.info(f"Using simulator: {args.sim}")
     env_class = get_sim_env_class(SimType(args.sim))
     env = env_class(scenario)
@@ -66,7 +65,6 @@ def main():
             "objects": {},
         }
     ] * scenario.num_envs
-
 
     obs, extras = env.reset(states=init_states)
 
