@@ -31,6 +31,7 @@ class IsaacgymHandler(BaseSimHandler):
         self.gym = None
         self.sim = None
         self.viewer = None
+        self._enable_viewer_sync: bool = True  # sync viewer flag
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self._num_envs: int = scenario.num_envs
@@ -61,6 +62,7 @@ class IsaacgymHandler(BaseSimHandler):
         self._dof_states: torch.Tensor | None = None
         self._rigid_body_states: torch.Tensor | None = None
         self._robot_dof_state: torch.Tensor | None = None
+        self._contact_forces: torch.Tensor | None = None
 
         # control related
         self._robot_num_dof: int  # number of robot dof
@@ -69,7 +71,7 @@ class IsaacgymHandler(BaseSimHandler):
         self._action_scale: torch.Tensor | None = (
             None  # for configuration: desire_pos = action_scale * action + default_pos
         )
-        self._default_dof_pos: torch.Tensor | None = (
+        self._robot_default_dof_pos: torch.Tensor | None = (
             None  # for the configuration: desire_pos = action_scale * action + default_pos
         )
         self._action_offset: bool = False  # for configuration: desire_pos = action_scale * action + default_pos
@@ -92,6 +94,7 @@ class IsaacgymHandler(BaseSimHandler):
         self._dof_states = gymtorch.wrap_tensor(self.gym.acquire_dof_state_tensor(self.sim))
         self._rigid_body_states = gymtorch.wrap_tensor(self.gym.acquire_rigid_body_state_tensor(self.sim))
         self._robot_dof_state = self._dof_states.view(self._num_envs, -1, 2)[:, self._obj_num_dof :]
+        self._contact_forces = gymtorch.wrap_tensor(self.gym.acquire_net_contact_force_tensor(self.sim))
 
     def _init_gym(self) -> None:
         physics_engine = gymapi.SIM_PHYSX
@@ -103,8 +106,8 @@ class IsaacgymHandler(BaseSimHandler):
         sim_params.gravity = gymapi.Vec3(0.0, 0.0, -9.8)
         if self.scenario.sim_params.dt is not None:
             # IsaacGym has a different dt definition than IsaacLab, see https://isaac-sim.github.io/IsaacLab/main/source/migration/migrating_from_isaacgymenvs.html#simulation-config
-            sim_params.dt = self.scenario.sim_params.dt * self.scenario.decimation
-        sim_params.substeps = self.scenario.decimation
+            sim_params.dt = self.scenario.sim_params.dt
+        sim_params.substeps = self.scenario.sim_params.substeps
         sim_params.use_gpu_pipeline = self.scenario.sim_params.use_gpu_pipeline
         sim_params.physx.solver_type = self.scenario.sim_params.solver_type
         sim_params.physx.num_position_iterations = self.scenario.sim_params.num_position_iterations
@@ -124,6 +127,8 @@ class IsaacgymHandler(BaseSimHandler):
             raise Exception("Failed to create sim")
         if not self.headless:
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
+            # press 'V' to toggle viewer sync
+            self.gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
             if self.viewer is None:
                 raise Exception("Failed to create viewer")
 
@@ -317,7 +322,7 @@ class IsaacgymHandler(BaseSimHandler):
                 if i_actuator_cfg.fully_actuated:
                     num_actions += 1
 
-            self._default_dof_pos = torch.tensor(default_dof_pos, device=self.device).unsqueeze(0)
+            self._robot_default_dof_pos = torch.tensor(default_dof_pos, device=self.device).unsqueeze(0)
             self.actions = torch.zeros([self._num_envs, num_actions], device=self.device)
 
             robot_asset_list.append(robot_asset)
@@ -539,6 +544,11 @@ class IsaacgymHandler(BaseSimHandler):
                 joint_vel_target=None,  # TODO
                 joint_effort_target=self._effort if self._manual_pd_on else None,
             )
+            # FIXME a temporary solution for accessing net contact forces of robots, it will be moved to
+            extra = {
+                "contact_forces": self._contact_forces.view(self.num_envs, -1, 3)[:, body_ids_reindex, :],
+            }
+            state.extra = extra
             robot_states[robot.name] = state
 
         camera_states = {}
@@ -573,22 +583,31 @@ class IsaacgymHandler(BaseSimHandler):
         action_tensor_all = torch.cat(action_tensor_list, dim=-1)
         return action_tensor_all
 
-    def set_dof_targets(self, obj_name: str, actions: list[Action]):
+    def set_dof_targets(self, obj_name: str, actions: list[Action] | torch.Tensor):
         self._actions_cache = actions
         action_input = torch.zeros_like(self._dof_states[:, 0])
-        action_array_all = self._get_action_array_all(actions)
-        robot_dim = action_array_all.shape[1]
+        if isinstance(actions, torch.Tensor):
+            # reverse sorted joint indices
+            reverse_reindex = self.get_joint_reindex(obj_name, inverse=True)
+            self._actions_cache = actions[:, reverse_reindex]
+            action_array_all = actions
+
+        else:
+            action_array_all = self._get_action_array_all(actions)
 
         assert (
             action_input.shape[0] % self._num_envs == 0
         )  # WARNING: obj dim(env0), robot dim(env0), obj dim(env1), robot dim(env1) ...
-        chunk_size = action_input.shape[0] // self._num_envs
-        robot_dim_index = [
-            i * chunk_size + offset
-            for i in range(self.num_envs)
-            for offset in range(chunk_size - robot_dim, chunk_size)
-        ]
-        action_input[robot_dim_index] = action_array_all.float().to(self.device).reshape(-1)
+
+        if not hasattr(self, "_robot_dim_index"):
+            robot_dim = action_array_all.shape[1]
+            chunk_size = action_input.shape[0] // self._num_envs
+            self._robot_dim_index = [
+                i * chunk_size + offset
+                for i in range(self.num_envs)
+                for offset in range(chunk_size - robot_dim, chunk_size)
+            ]
+        action_input[self._robot_dim_index] = action_array_all.float().to(self.device).reshape(-1)
 
         # if any effort joint exist, set pd controller's target position for later effort calculation
         if self._manual_pd_on:
@@ -596,23 +615,17 @@ class IsaacgymHandler(BaseSimHandler):
             self.actions = actions_reshape[:, self._obj_num_dof :]
             # and set position target for position actuator if any exist
             if len(self._pos_ctrl_dof_dix) > 0:
-                self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(action_input))
+                self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(action_input[:,]))
 
         # directly set position target
         else:
-            self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(action_input))
+            self.gym.set_dof_position_target_tensor(self.sim, gymtorch.unwrap_tensor(action_input[:,]))
 
     def refresh_render(self) -> None:
         # Step the physics
         self.gym.simulate(self.sim)
         self.gym.fetch_results(self.sim, True)
-
-        # Refresh cameras and viewer
-        self.gym.step_graphics(self.sim)
-        self.gym.render_all_camera_sensors(self.sim)
-        # TODO add keyboard callback(mostly likely push v) to stop rendering in render mode
-        if not self.headless:
-            self.gym.draw_viewer(self.viewer, self.sim, False)
+        self._render()
 
     def _simulate_one_physics_step(self, action):
         # for pd control joints by effort api, update torque and step the physics
@@ -628,7 +641,9 @@ class IsaacgymHandler(BaseSimHandler):
 
     def _simulate(self) -> None:
         # Step the physics
-        self._simulate_one_physics_step(self.actions)
+        for _ in range(self.scenario.decimation):
+            self._simulate_one_physics_step(self.actions)
+
         # Refresh tensors
         if not self._manual_pd_on:
             self.gym.refresh_dof_state_tensor(self.sim)
@@ -636,14 +651,22 @@ class IsaacgymHandler(BaseSimHandler):
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_jacobian_tensors(self.sim)
         self.gym.refresh_mass_matrix_tensors(self.sim)
+        self.gym.refresh_net_contact_force_tensor(self.sim)
 
         # Refresh cameras and viewer
-        self.gym.step_graphics(self.sim)
-        self.gym.render_all_camera_sensors(self.sim)
-        if not self.headless:
-            self.gym.draw_viewer(self.viewer, self.sim, False)
+        self._render()
 
-        # self.gym.sync_frame_time(self.sim)
+    def _render(self) -> None:
+        """Listen for keyboard events, step graphics and render the environment"""
+        if not self.headless:
+            for evt in self.gym.query_viewer_action_events(self.viewer):
+                if evt.action == "toggle_viewer_sync" and evt.value > 0:
+                    self._enable_viewer_sync = not self._enable_viewer_sync
+            if self._enable_viewer_sync:
+                self.gym.step_graphics(self.sim)
+                self.gym.draw_viewer(self.viewer, self.sim, False)
+            else:
+                self.gym.poll_viewer_events(self.viewer)
 
     def _compute_effort(self, actions):
         """Compute effort from actions"""
@@ -653,7 +676,8 @@ class IsaacgymHandler(BaseSimHandler):
         robot_dof_vel = self._robot_dof_state[..., 1]
         if self._action_offset:
             _effort = (
-                self._p_gains * (action_scaled + self._default_dof_pos - robot_dof_pos) - self._d_gains * robot_dof_vel
+                self._p_gains * (action_scaled + self._robot_default_dof_pos - robot_dof_pos)
+                - self._d_gains * robot_dof_vel
             )
         else:
             _effort = self._p_gains * (action_scaled - robot_dof_pos) - self._d_gains * robot_dof_vel
@@ -671,7 +695,7 @@ class IsaacgymHandler(BaseSimHandler):
         if self._obj_num_dof > 0:
             obj_force_placeholder = torch.zeros((self._num_envs, self._obj_num_dof), device=self.device)
             effort = torch.cat((obj_force_placeholder, effort), dim=1)
-        self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(effort))
+        self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(effort[:,]))
 
     def set_states(self, states: list[EnvState], env_ids: list[int] | None = None):
         ## Support setting status only for specified env_ids
@@ -751,6 +775,7 @@ class IsaacgymHandler(BaseSimHandler):
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_jacobian_tensors(self.sim)
         self.gym.refresh_mass_matrix_tensors(self.sim)
+        self.gym.refresh_net_contact_force_tensor(self.sim)
 
         # reset all env_id action to default
         self.actions[env_ids] = 0.0
@@ -837,7 +862,7 @@ class IsaacgymHandler(BaseSimHandler):
     ############################################################
     def get_joint_names(self, obj_name: str, sort: bool = True) -> list[str]:
         if isinstance(self.object_dict[obj_name], ArticulationObjCfg):
-            joint_names = list(self._joint_info[obj_name]["global_indices"].keys())
+            joint_names = list(self._joint_info[obj_name]["names"])
             if sort:
                 joint_names.sort()
             return joint_names
@@ -856,6 +881,16 @@ class IsaacgymHandler(BaseSimHandler):
     def _get_body_ids_reindex(self, obj_name: str) -> list[int]:
         return [self._body_info[obj_name]["global_indices"][bn] for bn in self.get_body_names(obj_name)]
 
+    def get_body_reindexed_indices_from_substring(self, obj_name, body_names: list[str]) -> torch.tensor:
+        """given substring of body name, find all the bodies indices in sorted order."""
+        matches = []
+        for name in body_names:
+            matches.extend([s for s in self._body_info[obj_name]["name"] if name in s])
+        index = torch.zeros(len(matches), dtype=torch.int32, device=self.device)
+        for i, name in enumerate(matches):
+            index[i] = list(self._body_info[obj_name]["local_indices"]).index(name)
+        return index
+
     @property
     def num_envs(self) -> int:
         return self._num_envs
@@ -867,6 +902,19 @@ class IsaacgymHandler(BaseSimHandler):
     @property
     def device(self) -> torch.device:
         return self._device
+
+    @property
+    def default_dof_pos(self) -> torch.tensor:
+        joint_reindex = self.get_joint_reindex(self.robot.name)
+        return self._robot_default_dof_pos[:, joint_reindex]
+
+    @property
+    def torque_limits(self) -> torch.tensor:
+        return self._torque_limits
+
+    @property
+    def robot_num_dof(self) -> int:
+        return self._robot_num_dof
 
 
 # TODO: try to align handler API and use GymWrapper instead
