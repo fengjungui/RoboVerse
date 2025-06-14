@@ -73,4 +73,6 @@ If you find this work useful in your research, please consider citing:
 metasim/index
 dataset_benchmark/index
 roboverse_learn/index
+API/index
+FAQ/index
 ```

@@ -1,4 +1,4 @@
-# MetaSim
+# User Guide
 
 ## Table of Contents
 ```{toctree}
@@ -18,12 +18,12 @@ get_started/advanced_installation/index
 :titlesonly:
 
 get_started/quick_start/index
-get_started/motion_planning/index
-get_started/rl_example/index
+get_started/advanced/index
+
 ```
 
 ```{toctree}
-:caption: User Guide
+:caption: Tutorials
 :maxdepth: 2
 :titlesonly:
 
@@ -41,7 +41,7 @@ user_guide/tips/index
 ```
 
 ```{toctree}
-:caption: Developer Guide
+:caption: Development Guide
 :maxdepth: 2
 :titlesonly:
 
@@ -63,19 +63,15 @@ developer_guide/tips/index
 troubleshooting/common
 troubleshooting/docker
 troubleshooting/isaaclab
+troubleshooting/known_issues/index
 ```
 
-```{toctree}
-:caption: Known Issues
-:maxdepth: 2
-:titlesonly:
 
-known_issues/controller
-```
-
+<!--
 ```{toctree}
 :caption: API Reference
 :maxdepth: 1
 
 api/index
 ```
+-->

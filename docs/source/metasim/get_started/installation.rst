@@ -1,4 +1,4 @@
-Direct Installation
+Server
 ===================
 
 First, clone the RoboVerse project:
