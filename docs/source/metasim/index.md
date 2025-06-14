@@ -27,17 +27,26 @@ get_started/advanced/index
 :maxdepth: 2
 :titlesonly:
 
-user_guide/support_matrix
-user_guide/replay_demo
-user_guide/collect_demo
-user_guide/render
-user_guide/multi_env
-user_guide/cross_embodiment
-user_guide/cross_sim
+<!--user_guide/support_matrix-->
+<!--user_guide/render-->
+<!--user_guide/multi_env-->
+<!--user_guide/cross_embodiment-->
+<!--user_guide/cross_sim-->
 user_guide/teleoperate_demo
 user_guide/real2sim
 get_started/prepare_data_hf
 user_guide/tips/index
+```
+
+```{toctree}
+:caption: Features
+:maxdepth: 2
+:titlesonly:
+
+user_guide/support_matrix
+user_guide/cross_embodiment
+user_guide/cross_sim
+
 ```
 
 ```{toctree}
