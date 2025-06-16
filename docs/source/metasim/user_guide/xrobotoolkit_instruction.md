@@ -1,3 +1,5 @@
+# XR Teleoperation Setup
+
 Follow these steps to install and run a full XR-to-robot teleoperation sample on a **PICO 4 Ultra headset and a Linux x86 PC**.
 
 - Linux x86 PC: Ubuntu 22.04
