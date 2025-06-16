@@ -34,9 +34,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, required=True)
     parser.add_argument("--robot", type=str, default="franka")
-    parser.add_argument(
-        "--num_envs", type=int, default=1, help="Number of environments to simulate."
-    )
+    parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to simulate.")
     parser.add_argument(
         "--sim",
         type=str,
@@ -65,9 +63,7 @@ def main():
 
     # data
     tic = time.time()
-    assert os.path.exists(task.traj_filepath), (
-        f"Trajectory file: {task.traj_filepath} does not exist."
-    )
+    assert os.path.exists(task.traj_filepath), f"Trajectory file: {task.traj_filepath} does not exist."
     init_states, all_actions, all_states = get_traj(task, robot, env.handler)
     toc = time.time()
     log.trace(f"Time to load data: {toc - tic:.2f}s")
@@ -109,9 +105,7 @@ def main():
         curr_robot_q = states.robots[robot.name].joint_pos[:, inverse_reorder_idx]
         ee_idx = states.robots[robot.name].body_names.index(robot.ee_body_name)
         robot_pos, robot_quat = states.robots[robot.name].root_state[0, :7].split([3, 4])
-        curr_ee_pos, curr_ee_quat = (
-            states.robots[robot.name].body_state[0, ee_idx, :7].split([3, 4])
-        )
+        curr_ee_pos, curr_ee_quat = states.robots[robot.name].body_state[0, ee_idx, :7].split([3, 4])
 
         curr_ee_pos_local = quat_apply(quat_inv(robot_quat), curr_ee_pos - robot_pos)
         curr_ee_quat_local = quat_mul(quat_inv(robot_quat), curr_ee_quat)
@@ -148,9 +142,7 @@ def main():
                 delta_quat = np.array([1, 0, 0, 0])
             else:
                 delta_pos = (controller_pos - prev_controller_pos) * scale_factor
-                delta_quat = quaternion_multiply(
-                    quaternion_inverse(prev_controller_quat), controller_quat
-                )
+                delta_quat = quaternion_multiply(quaternion_inverse(prev_controller_quat), controller_quat)
 
         else:
             prev_controller_pos = None

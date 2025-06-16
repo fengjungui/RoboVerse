@@ -64,9 +64,7 @@ class PygameKeyboardClient:
         pygame.quit()
 
     def draw_instructions(self):
-        font = pygame.font.Font(
-            pygame.font.match_font("DejaVu Sans Mono"), 25
-        )  # monospaced font Courier
+        font = pygame.font.Font(pygame.font.match_font("DejaVu Sans Mono"), 25)  # monospaced font Courier
         text_color = (255, 255, 255)
         bg_color = (0, 0, 0)
 
