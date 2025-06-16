@@ -132,7 +132,7 @@ Run a full XR-to-robot teleoperation sample on a **PICO 4 Ultra headset and a Li
 - PICO 4 Ultra: User OS >5.12. Currently supports [PICO 4 Ultra](https://www.picoxr.com/global/products/pico4-ultra) and [PICO 4 Ultra Enterprise](https://www.picoxr.com/global/products/pico4-ultra-enterprise).
 
 ### Dependencies
-You need to install `XRoboToolkit-PC-Service` on PC and `XRoboToolkit-PICO` app on your XR Headset. Follow the [XRoboToolkit Installation Instruction](docs/source/metasim/user_guide/xrobotoolkit_instruction.md).
+You need to install `XRoboToolkit-PC-Service` on PC and `XRoboToolkit-PICO` app on your XR Headset. Follow the [XRoboToolkit Installation Instruction](./xrobotoolkit_instruction.md).
 
 ### Play in Simulation
    - Run the XR teleoperation demo
