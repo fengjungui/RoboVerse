@@ -134,8 +134,8 @@ class MujocoHandler(BaseSimHandler):
             builtin="checker",
             width=512,
             height=512,
-            rgb1=[0, 0, 0],
-            rgb2=[1.0, 1.0, 1.0],
+            rgb1=[0.2, 0.3, 0.4],
+            rgb2=[0.1, 0.2, 0.3],
         )
         mjcf_model.asset.add(
             "material", name="matplane", reflectance="0.2", texture="texplane", texrepeat=[1, 1], texuniform=True
